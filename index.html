@@ -337,6 +337,60 @@
 
   .notice { font-size:12px; color:var(--text3); margin-top:10px; }
 
+  /* ── RANDOM ── */
+  .rand-stepper {
+    width:36px;height:36px;border-radius:50%;
+    background:var(--surface2);border:1px solid var(--border);
+    color:var(--text);font-size:20px;line-height:1;cursor:pointer;
+    display:flex;align-items:center;justify-content:center;transition:.15s;
+  }
+  .rand-stepper:hover { border-color:var(--accent);color:var(--accent); }
+  .rand-member-row {
+    display:flex;align-items:center;gap:10px;
+    background:var(--surface2);border:1px solid var(--border);
+    border-radius:var(--radius-sm);padding:10px 14px;cursor:pointer;transition:.15s;
+  }
+  .rand-member-row:hover { border-color:var(--accent); }
+  .rand-member-row.selected { border-color:var(--accent3);background:rgba(91,222,158,.07); }
+  .rand-cb { width:16px;height:16px;accent-color:var(--accent3);cursor:pointer;flex-shrink:0; }
+  .rand-group-box {
+    background:var(--surface2);border:1px solid var(--border);
+    border-radius:var(--radius-sm);padding:14px 16px;margin-bottom:10px;
+    animation: fadeUp .35s ease;
+  }
+  .rand-group-label {
+    font-size:11px;font-weight:700;letter-spacing:1px;color:var(--text3);
+    text-transform:uppercase;margin-bottom:10px;
+  }
+  .rand-name-chip {
+    display:inline-flex;align-items:center;gap:6px;
+    border-radius:999px;padding:5px 12px;margin:3px;
+    font-size:13px;font-weight:600;color:#fff;
+  }
+  .rand-chip-avatar {
+    width:20px;height:20px;border-radius:50%;
+    display:flex;align-items:center;justify-content:center;
+    font-size:9px;font-weight:700;background:rgba(255,255,255,.25);
+  }
+  .rand-leftover {
+    background:rgba(240,196,106,.1);border:1px dashed rgba(240,196,106,.3);
+    border-radius:var(--radius-sm);padding:12px 16px;margin-top:6px;
+    font-size:13px;color:var(--accent4);
+  }
+  @keyframes rollIn {
+    0% { opacity:0; transform:scale(.85) rotateY(-20deg); }
+    100% { opacity:1; transform:scale(1) rotateY(0); }
+  }
+  .rand-group-box { animation: rollIn .4s ease; }
+  #rand-btn:hover { transform:scale(1.02); box-shadow:0 12px 32px rgba(91,141,239,.45) !important; }
+  #rand-btn:active { transform:scale(.97); }
+  .rand-hist-item {
+    font-size:12px;color:var(--text2);padding:8px 0;
+    border-bottom:1px solid var(--border);display:flex;justify-content:space-between;
+  }
+  .rand-hist-item:last-child { border-bottom:none; }
+  @media(max-width:700px){ #random-layout { grid-template-columns:1fr !important; } }
+
   /* Admin badge */
   .admin-badge {
     font-size:10px; background:rgba(240,196,106,.15); color:var(--accent4);
@@ -417,6 +471,7 @@
     <button class="nav-tab" onclick="goPage('appointments')">📌 นัดหมาย</button>
     <button class="nav-tab" onclick="goPage('assignments')">📝 งานที่ต้องส่ง</button>
     <button class="nav-tab" onclick="goPage('members')">👥 สมาชิก</button>
+    <button class="nav-tab" onclick="goPage('random')">🎲 สุ่มกลุ่ม</button>
     <button class="nav-tab" id="admin-tab" onclick="goPage('admin')" style="display:none">⚙️ Admin</button>
   </div>
 
@@ -630,6 +685,63 @@
       </div>
     </div>
 
+
+    <!-- ── RANDOM ── -->
+    <div class="page" id="page-random">
+      <div class="section-header">
+        <div class="section-title">🎲 สุ่มกลุ่ม</div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px" id="random-layout">
+
+        <!-- LEFT: settings -->
+        <div style="display:flex;flex-direction:column;gap:16px">
+          <div class="card">
+            <div class="card-title"><span class="icon">⚙️</span> ตั้งค่าการสุ่ม</div>
+            <div class="form-group" style="margin-bottom:14px">
+              <label>จำนวนคนต่อกลุ่ม</label>
+              <div style="display:flex;align-items:center;gap:12px;margin-top:6px">
+                <button class="rand-stepper" onclick="changeGroupSize(-1)">−</button>
+                <div style="font-family:Space Mono,monospace;font-size:28px;font-weight:700;color:var(--accent);min-width:40px;text-align:center" id="rand-size-display">2</div>
+                <button class="rand-stepper" onclick="changeGroupSize(1)">+</button>
+                <span style="font-size:13px;color:var(--text2)">คน / กลุ่ม</span>
+              </div>
+            </div>
+            <div style="font-size:12px;color:var(--text3);margin-top:4px" id="rand-group-count"></div>
+          </div>
+
+          <div class="card">
+            <div class="card-title"><span class="icon">👥</span> เลือกผู้เข้าร่วมสุ่ม</div>
+            <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap">
+              <button class="btn-add" style="padding:7px 14px;font-size:12px" onclick="randSelectAll(true)">เลือกทั้งหมด</button>
+              <button class="btn-logout" style="padding:7px 14px;font-size:12px" onclick="randSelectAll(false)">ยกเลิกทั้งหมด</button>
+            </div>
+            <div id="rand-member-list" style="display:flex;flex-direction:column;gap:8px"></div>
+          </div>
+        </div>
+
+        <!-- RIGHT: result -->
+        <div style="display:flex;flex-direction:column;gap:16px">
+          <div class="card" style="text-align:center">
+            <button id="rand-btn" onclick="doRandom()" style="width:100%;padding:18px;font-size:20px;font-weight:700;background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;border:none;border-radius:var(--radius);cursor:pointer;transition:.2s;font-family:Sarabun,sans-serif;box-shadow:0 8px 24px rgba(91,141,239,.3);">🎲 สุ่มเลย!</button>
+          </div>
+
+          <div class="card" id="rand-result-card" style="display:none">
+            <div class="card-title"><span class="icon">✨</span> ผลการสุ่ม</div>
+            <div id="rand-result"></div>
+          </div>
+
+          <div class="card" id="rand-history-card" style="display:none">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+              <div class="card-title" style="margin-bottom:0"><span class="icon">🕐</span> ประวัติการสุ่ม</div>
+              <button class="btn-del" onclick="clearRandHistory()" style="font-size:13px">ล้าง</button>
+            </div>
+            <div id="rand-history"></div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
   </div><!-- /content -->
 </div><!-- /app -->
 
@@ -768,7 +880,7 @@ function goPage(name){
   });
   // render
   const renders={dashboard:renderDashboard,freetimes:renderFreeTimes,timetable:renderTimetable,
-    appointments:renderAppointments,assignments:()=>renderAssignments('pending'),members:renderMembers,admin:renderAdmin};
+    appointments:renderAppointments,assignments:()=>renderAssignments('pending'),members:renderMembers,admin:renderAdmin,random:renderRandom};
   if(renders[name]) renders[name]();
 }
 
@@ -1071,6 +1183,138 @@ function makeAdmin(id){
   if(!confirm('ตั้งสมาชิกคนนี้เป็น Admin?')) return;
   const users=getUsers(); const u=users.find(x=>x.id===id); if(u) u.isAdmin=true;
   saveUsers(users); renderAdmin();
+}
+
+// ════════════════════════════════
+// RANDOM GROUP
+// ════════════════════════════════
+let randGroupSize=2;
+let randSelected={}; // uid -> bool
+
+function renderRandom(){
+  const users=getUsers();
+  // init selected state (default all true)
+  users.forEach(u=>{ if(randSelected[u.id]===undefined) randSelected[u.id]=true; });
+  // member list
+  const el=document.getElementById('rand-member-list');
+  el.innerHTML=users.map(u=>`
+    <div class="rand-member-row ${randSelected[u.id]?'selected':''}" onclick="toggleRandMember('${u.id}')">
+      <input type="checkbox" class="rand-cb" ${randSelected[u.id]?'checked':''} onchange="toggleRandMember('${u.id}')" onclick="event.stopPropagation()">
+      <div class="member-avatar" style="background:${u.color};width:28px;height:28px;font-size:11px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;flex-shrink:0">${initials(u.name)}</div>
+      <span style="font-size:14px;font-weight:500">${u.name}</span>
+    </div>`).join('');
+  updateRandCount();
+  renderRandHistory();
+}
+
+function toggleRandMember(id){
+  randSelected[id]=!randSelected[id];
+  renderRandom();
+}
+
+function randSelectAll(v){
+  getUsers().forEach(u=>randSelected[u.id]=v);
+  renderRandom();
+}
+
+function changeGroupSize(delta){
+  const selected=getUsers().filter(u=>randSelected[u.id]);
+  const max=Math.max(selected.length,1);
+  randGroupSize=Math.min(Math.max(1,randGroupSize+delta),max);
+  document.getElementById('rand-size-display').textContent=randGroupSize;
+  updateRandCount();
+}
+
+function updateRandCount(){
+  const selected=getUsers().filter(u=>randSelected[u.id]);
+  const n=selected.length;
+  if(randGroupSize>n && n>0){ randGroupSize=n; document.getElementById('rand-size-display').textContent=randGroupSize; }
+  const groups=randGroupSize>0?Math.floor(n/randGroupSize):0;
+  const leftover=randGroupSize>0?n%randGroupSize:0;
+  document.getElementById('rand-group-count').textContent=
+    n===0?'ยังไม่ได้เลือกสมาชิก':
+    `${n} คน → ได้ ${groups} กลุ่ม${leftover>0?' + เหลือ '+leftover+' คน':''}`;
+}
+
+function doRandom(){
+  const users=getUsers();
+  const pool=users.filter(u=>randSelected[u.id]);
+  if(pool.length===0){ alert('เลือกสมาชิกก่อนนะ!'); return; }
+  if(randGroupSize<1){ alert('ขนาดกลุ่มต้องมากกว่า 0'); return; }
+
+  // Fisher-Yates shuffle
+  const arr=[...pool];
+  for(let i=arr.length-1;i>0;i--){
+    const j=Math.floor(Math.random()*(i+1));
+    [arr[i],arr[j]]=[arr[j],arr[i]];
+  }
+
+  // Split into groups
+  const groups=[];
+  for(let i=0;i<arr.length;i+=randGroupSize){
+    groups.push(arr.slice(i,i+randGroupSize));
+  }
+
+  // Separate leftover if last group is smaller
+  let mainGroups=groups, leftover=[];
+  if(groups.length>1 && groups[groups.length-1].length<randGroupSize){
+    leftover=mainGroups.pop();
+  }
+
+  // Render result
+  const resultEl=document.getElementById('rand-result');
+  const groupColors=['#5b8def','#e05b8d','#5bde9e','#f0c46a','#c45bde','#de8a5b','#5bdede'];
+  resultEl.innerHTML=mainGroups.map((g,i)=>`
+    <div class="rand-group-box" style="animation-delay:${i*0.08}s">
+      <div class="rand-group-label">กลุ่มที่ ${i+1}</div>
+      <div>
+        ${g.map(u=>`
+          <span class="rand-name-chip" style="background:${groupColors[i%groupColors.length]}">
+            <span class="rand-chip-avatar">${initials(u.name)}</span>
+            ${u.name}
+          </span>`).join('')}
+      </div>
+    </div>`).join('')+
+    (leftover.length>0?`
+    <div class="rand-leftover">
+      <div style="font-size:11px;font-weight:700;letter-spacing:1px;margin-bottom:8px">⚠️ เหลือ (กลุ่มไม่ครบ)</div>
+      <div>${leftover.map(u=>`
+        <span class="rand-name-chip" style="background:rgba(240,196,106,.3);color:var(--accent4)">
+          <span class="rand-chip-avatar" style="background:rgba(240,196,106,.2)">${initials(u.name)}</span>
+          ${u.name}
+        </span>`).join('')}</div>
+    </div>`:'');
+
+  document.getElementById('rand-result-card').style.display='block';
+
+  // Save history
+  const hist=load('rand-history',[]);
+  const now=new Date();
+  hist.unshift({
+    time: now.toLocaleString('th-TH',{hour:'2-digit',minute:'2-digit',day:'numeric',month:'short'}),
+    size: randGroupSize,
+    groups: mainGroups.map(g=>g.map(u=>u.name)),
+    leftover: leftover.map(u=>u.name)
+  });
+  save('rand-history', hist.slice(0,10)); // keep last 10
+  renderRandHistory();
+}
+
+function renderRandHistory(){
+  const hist=load('rand-history',[]);
+  const card=document.getElementById('rand-history-card');
+  const el=document.getElementById('rand-history');
+  if(hist.length===0){ card.style.display='none'; return; }
+  card.style.display='block';
+  el.innerHTML=hist.map(h=>`
+    <div class="rand-hist-item">
+      <span>${h.time} · กลุ่มละ ${h.size} คน</span>
+      <span style="color:var(--text3)">${h.groups.map((g,i)=>'กลุ่ม'+(i+1)+': '+g.join(', ')).join(' | ')}${h.leftover?.length?' | เหลือ: '+h.leftover.join(', '):''}</span>
+    </div>`).join('');
+}
+
+function clearRandHistory(){
+  save('rand-history',[]); renderRandHistory();
 }
 
 // ════════════════════════════════

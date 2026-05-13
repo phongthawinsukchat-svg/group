@@ -1,6 +1,8 @@
 <!DOCTYPE html>
 <html lang="th">
 <head>
+  <link rel="manifest" href="/manifest.webmanifest">
+<meta name="theme-color" content="#1d4ed8">
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>GroupSync — ตารางกลุ่ม</title>
@@ -230,6 +232,39 @@
     border-radius:4px; padding:4px 7px;
     font-size:11px; font-weight:500; line-height:1.4;
   }
+  .tt-block-meta {
+    display:block;
+    margin-top:2px;
+    color:rgba(255,255,255,.8);
+    font-size:10px;
+    font-weight:400;
+  }
+  .filter-bar {
+    display:flex;
+    align-items:center;
+    gap:12px;
+    flex-wrap:wrap;
+  }
+  .filter-bar select {
+    min-width:180px;
+    padding:10px 12px;
+    background:var(--surface2);
+    border:1px solid var(--border);
+    border-radius:var(--radius-sm);
+    color:var(--text);
+    font-family:'Sarabun',sans-serif;
+    font-size:14px;
+    outline:none;
+  }
+  .filter-bar select:focus {
+    border-color:var(--accent);
+    box-shadow:0 0 0 3px rgba(91,141,239,.12);
+  }
+  .tt-caption {
+    font-size:13px;
+    color:var(--text2);
+    margin-bottom:16px;
+  }
 
   /* ── FORM ELEMENTS ── */
   .form-row { display:flex; gap:12px; flex-wrap:wrap; margin-bottom:14px; }
@@ -391,11 +426,58 @@
   .rand-hist-item:last-child { border-bottom:none; }
   @media(max-width:700px){ #random-layout { grid-template-columns:1fr !important; } }
 
+  /* ── BUDDY ── */
+  .buddy-card-big {
+    background: linear-gradient(135deg, #1e2540, #2a1e35);
+    border: 2px solid var(--accent4);
+    border-radius: 20px;
+    padding: 40px 32px;
+    display: inline-block;
+    min-width: 260px;
+    animation: rollIn .5s ease;
+  }
+  .buddy-heart { font-size:48px; margin-bottom:12px; animation: heartBeat 1.2s ease infinite; }
+  @keyframes heartBeat {
+    0%,100% { transform:scale(1); }
+    50% { transform:scale(1.15); }
+  }
+  .buddy-name-big {
+    font-size:32px; font-weight:700; color:var(--accent4);
+    font-family:'Space Mono',monospace; letter-spacing:-1px;
+    margin-bottom:6px;
+  }
+  .buddy-username { font-size:14px; color:var(--text2); }
+  .buddy-no-draw {
+    font-size:15px; color:var(--text2); padding:20px;
+    background:var(--surface2); border-radius:var(--radius);
+    border:1px dashed var(--border);
+  }
+  .buddy-pair-row {
+    display:flex; align-items:center; gap:12px;
+    padding:12px 14px; background:var(--surface2);
+    border:1px solid var(--border); border-radius:var(--radius-sm);
+    margin-bottom:8px;
+  }
+  .buddy-arrow { color:var(--accent4); font-size:18px; flex-shrink:0; }
+  @media(max-width:700px){ #buddy-admin-layout { grid-template-columns:1fr !important; } }
+
   /* Admin badge */
   .admin-badge {
     font-size:10px; background:rgba(240,196,106,.15); color:var(--accent4);
     border-radius:999px; padding:2px 8px; font-weight:600;
   }
+
+  /* ── EYE TOGGLE ── */
+  .pw-wrap { position:relative; }
+  .pw-wrap input { padding-right:44px; }
+  .eye-btn {
+    position:absolute; right:12px; top:50%; transform:translateY(-50%);
+    background:none; border:none; cursor:pointer;
+    color:var(--text3); padding:4px; line-height:0;
+    transition:color .15s; user-select:none; outline:none;
+  }
+  .eye-btn:hover { color:var(--text); }
+  .eye-btn svg { display:block; width:18px; height:18px; }
 </style>
 </head>
 <body>
@@ -416,9 +498,16 @@
       </div>
       <div class="field-group">
         <label>รหัสผ่าน</label>
-        <input type="password" id="login-password" placeholder="กรอกรหัสผ่าน">
+        <div class="pw-wrap">
+          <input type="password" id="login-password" placeholder="กรอกรหัสผ่าน">
+          <button type="button" class="eye-btn" data-target="login-password" data-show="0" tabindex="-1"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button>
+        </div>
       </div>
       <div class="err-msg" id="login-err">ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง</div>
+      <label style="display:flex;align-items:center;gap:8px;margin:14px 0 4px;cursor:pointer;font-size:13px;color:var(--text2)">
+        <input type="checkbox" id="remember-me" style="width:15px;height:15px;accent-color:var(--accent);cursor:pointer">
+        จำฉันไว้ในอุปกรณ์นี้
+      </label>
       <button class="btn-primary" onclick="doLogin()">เข้าสู่ระบบ</button>
       <div class="login-switch">ยังไม่มีบัญชี? <a onclick="toggleForm('register')">สมัครสมาชิก</a></div>
     </div>
@@ -426,16 +515,19 @@
     <!-- REGISTER FORM -->
     <div id="form-register" style="display:none">
       <div class="field-group">
-        <label>ชื่อ-นามสกุล</label>
-        <input type="text" id="reg-name" placeholder="เช่น สมชาย ใจดี">
-      </div>
-      <div class="field-group">
         <label>ชื่อผู้ใช้</label>
         <input type="text" id="reg-username" placeholder="ไม่มีช่องว่าง">
       </div>
       <div class="field-group">
+        <label>ห้อง</label>
+        <input type="text" id="reg-room" placeholder="เช่น 3/10">
+      </div>
+      <div class="field-group">
         <label>รหัสผ่าน</label>
-        <input type="password" id="reg-password" placeholder="อย่างน้อย 4 ตัวอักษร">
+        <div class="pw-wrap">
+          <input type="password" id="reg-password" placeholder="อย่างน้อย 4 ตัวอักษร">
+          <button type="button" class="eye-btn" data-target="reg-password" data-show="0" tabindex="-1"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button>
+        </div>
       </div>
       <div class="field-group">
         <label>รหัสเข้าร่วมกลุ่ม</label>
@@ -472,6 +564,7 @@
     <button class="nav-tab" onclick="goPage('assignments')">📝 งานที่ต้องส่ง</button>
     <button class="nav-tab" onclick="goPage('members')">👥 สมาชิก</button>
     <button class="nav-tab" onclick="goPage('random')">🎲 สุ่มกลุ่ม</button>
+    <button class="nav-tab" onclick="goPage('buddy')">💛 บัดดี้</button>
     <button class="nav-tab" id="admin-tab" onclick="goPage('admin')" style="display:none">⚙️ Admin</button>
   </div>
 
@@ -523,10 +616,50 @@
     <!-- ── TIMETABLE ── -->
     <div class="page" id="page-timetable">
       <div class="section-header">
-        <div class="section-title">📅 ตารางเรียนของฉัน</div>
-        <button class="btn-add" onclick="openTTModal()">+ เพิ่มคาบเรียน</button>
+        <div>
+          <div class="section-title">📅 ตารางเรียน</div>
+          <div class="notice">เลือกดูตารางรวมทุกห้อง หรือดูเฉพาะห้องที่ต้องการได้</div>
+        </div>
+        <div class="filter-bar">
+          <select id="tt-room-filter" onchange="setTimetableRoomFilter(this.value)"></select>
+          <button class="btn-add" onclick="openTTModal()">+ เพิ่มคาบเรียน</button>
+        </div>
+      </div>
+
+      <div class="card" style="margin-bottom:20px">
+        <div class="card-title"><span class="icon">🖼️</span> อ่านตารางเรียนจากรูป</div>
+        <div class="notice" style="margin-bottom:14px">อัปโหลดรูปตารางเรียน ระบบจะ OCR อ่านรหัสวิชา/ห้อง/เวลา แล้วสรุปให้ตรวจทานก่อนบันทึก</div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>รูปตารางเรียน</label>
+            <input type="file" id="tt-import-image" accept="image/*">
+          </div>
+          <div class="form-group">
+            <label>ห้องที่อ่านได้ / ห้องเป้าหมาย</label>
+            <input type="text" id="tt-import-room" placeholder="เช่น 3/10">
+          </div>
+        </div>
+        <div class="form-row">
+          <button class="btn-add" onclick="readTimetableImage()">อ่านรูปตารางเรียน</button>
+          <button class="btn-logout" style="padding:10px 20px" onclick="clearTTImport()">ล้างผลอ่าน</button>
+        </div>
+        <div class="notice" id="tt-import-status">รองรับไฟล์รูปทั่วไป ถ้ารูปเอียง/เบลอมาก OCR อาจอ่านผิดได้</div>
+        <div id="tt-import-review" style="display:none;margin-top:16px">
+          <div class="form-row">
+            <div class="form-group">
+              <label>ข้อความ OCR ที่อ่านได้ แก้ได้ก่อนแปลง</label>
+              <textarea id="tt-import-text" style="min-height:150px" placeholder="ผล OCR จะอยู่ตรงนี้"></textarea>
+            </div>
+          </div>
+          <div class="form-row">
+            <button class="btn-add" onclick="parseTTImportText()">แปลงเป็นรายการคาบ</button>
+            <button class="btn-add" style="background:var(--accent3);color:#06160e" onclick="saveTTImportEntries()">บันทึกเข้าตารางเรียน</button>
+          </div>
+          <div id="tt-import-result"></div>
+        </div>
       </div>
       <div class="card">
+        <div class="tt-caption" id="tt-summary"></div>
         <div class="timetable-wrap">
           <div class="timetable" id="my-timetable"></div>
         </div>
@@ -564,7 +697,7 @@
         </div>
       </div>
       <div style="margin-top:20px">
-        <div class="card-title" style="margin-bottom:14px">รายการคาบเรียน</div>
+        <div class="card-title" style="margin-bottom:14px">รายการคาบเรียนของฉัน</div>
         <div id="tt-list"></div>
       </div>
     </div>
@@ -742,25 +875,154 @@
       </div>
     </div>
 
+
+    <!-- ── BUDDY ── -->
+    <div class="page" id="page-buddy">
+      <div class="section-header">
+        <div class="section-title">💛 ระบบบัดดี้</div>
+      </div>
+      <!-- USER VIEW: show my buddy -->
+      <div id="buddy-user-view">
+        <div class="card" id="buddy-reveal-card" style="text-align:center;padding:48px 24px">
+          <div id="buddy-reveal-content"></div>
+        </div>
+      </div>
+      <!-- ADMIN VIEW: setup + all pairs -->
+      <div id="buddy-admin-view" style="display:none">
+        <div id="buddy-setup-section">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px" id="buddy-admin-layout">
+            <div class="card">
+              <div class="card-title"><span class="icon">👥</span> เลือกผู้เข้าร่วม</div>
+              <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap">
+                <button class="btn-add" style="padding:7px 14px;font-size:12px" onclick="buddySelectAll(true)">เลือกทั้งหมด</button>
+                <button class="btn-logout" style="padding:7px 14px;font-size:12px" onclick="buddySelectAll(false)">ยกเลิกทั้งหมด</button>
+              </div>
+              <div id="buddy-member-list" style="display:flex;flex-direction:column;gap:8px"></div>
+            </div>
+            <div class="card">
+              <div class="card-title"><span class="icon">⚙️</span> จัดการ</div>
+              <p style="font-size:13px;color:var(--text2);margin-bottom:20px;line-height:1.7">
+                เลือกสมาชิกด้านซ้าย แล้วกดสุ่ม<br>
+                ระบบจะจับคู่แบบ <b style="color:var(--accent3)">ไม่มีซ้ำ</b> และ <b style="color:var(--accent3)">ไม่ได้ตัวเอง</b><br>
+                สมาชิกเห็นได้เฉพาะบัดดี้ของตัวเอง<br>
+                Admin เห็นคู่ทั้งหมด
+              </p>
+              <button onclick="doShuffleBuddy()" style="width:100%;padding:14px;font-size:16px;font-weight:700;background:linear-gradient(135deg,var(--accent4),#e09a30);color:#1a1000;border:none;border-radius:var(--radius);cursor:pointer;font-family:Sarabun,sans-serif;margin-bottom:12px;">
+                💛 สุ่มบัดดี้!
+              </button>
+              <button onclick="doResetBuddy()" style="width:100%;padding:12px;font-size:14px;background:transparent;border:1px solid var(--danger);color:var(--danger);border-radius:var(--radius);cursor:pointer;font-family:Sarabun,sans-serif;">
+                🔄 รีเซ็ตและสุ่มใหม่
+              </button>
+              <div style="font-size:12px;color:var(--text3);margin-top:10px">การรีเซ็ตจะลบผลการสุ่มทั้งหมด</div>
+            </div>
+          </div>
+        </div>
+        <!-- All pairs table (admin only) -->
+        <div class="card" id="buddy-pairs-card" style="margin-top:20px;display:none">
+          <div class="card-title"><span class="icon">🔍</span> คู่บัดดี้ทั้งหมด (Admin เท่านั้น)</div>
+          <div id="buddy-pairs-list"></div>
+        </div>
+      </div>
+    </div>
+
   </div><!-- /content -->
 </div><!-- /app -->
 
-<script>
+<script type="module">
+  // Firebase SDK
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/11.4.0/firebase-app.js";
+  import { getAnalytics } from "https://www.gstatic.com/firebasejs/11.4.0/firebase-analytics.js";
+  import { getDatabase, ref, get, update, onValue } from "https://www.gstatic.com/firebasejs/11.4.0/firebase-database.js";
+
+  // Your web app's Firebase configuration
+  const firebaseConfig = {
+    apiKey: "AIzaSyAJc_ScWGvai-9GPQ4Rahb3PoLQdQEBYbw",
+    authDomain: "my-web-b3712.firebaseapp.com",
+    databaseURL: "https://my-web-b3712-default-rtdb.asia-southeast1.firebasedatabase.app",
+    projectId: "my-web-b3712",
+    storageBucket: "my-web-b3712.firebasestorage.app",
+    messagingSenderId: "830507887705",
+    appId: "1:830507887705:web:17dae1a059441ba37f9548",
+    measurementId: "G-QVNPE9TTX7"
+  };
+
+  // Initialize Firebase
+  const app = initializeApp(firebaseConfig);
+  const analytics = getAnalytics(app);
+
+  const db = getDatabase(app);
+  const storeRef = ref(db, "groupsyncStore/main");
+
 // ════════════════════════════════
 // CONSTANTS & HELPERS
 // ════════════════════════════════
 const DAYS = ['จันทร์','อังคาร','พุธ','พฤหัสบดี','ศุกร์'];
 const PERIODS = [
-  '08:00','09:00','10:00','11:00','12:00',
-  '13:00','14:00','15:00','16:00','17:00','18:00'
+  '08:30','09:20','10:10','11:00','11:50',
+  '12:40','13:30','14:20','15:10','16:00','16:50'
 ];
 const COLORS = [
   '#5b8def','#e05b8d','#5bde9e','#f0c46a','#c45bde',
   '#de8a5b','#5bdede','#de5b5b','#8de05b','#de5bb8'
 ];
 
-function save(key,val){ localStorage.setItem('gs_'+key, JSON.stringify(val)); }
-function load(key,def=null){ const v=localStorage.getItem('gs_'+key); return v?JSON.parse(v):def; }
+let storeCache={};
+let storeReady=false;
+let saveQueue=Promise.resolve();
+let activePage='dashboard';
+
+function cloneValue(val){
+  if(val===undefined) return undefined;
+  return JSON.parse(JSON.stringify(val));
+}
+
+function sanitizeStore(data={}){
+  const next={...data};
+  delete next._updatedAt;
+  return next;
+}
+
+async function initializeDataStore(){
+  const snap = await get(storeRef);
+  storeCache = snap.exists() ? sanitizeStore(snap.val()) : {};
+  storeReady = true;
+  onValue(storeRef, (docSnap) => {
+    if(!docSnap.exists()) return;
+    storeCache = sanitizeStore(docSnap.val());
+    if(currentUser){
+      const freshUser = getUsers().find(u => u.id === currentUser.id);
+      if(!freshUser){
+        doLogout();
+        alert('บัญชีนี้ไม่อยู่ในกลุ่มแล้ว');
+        return;
+      }
+      currentUser = normalizeUser(freshUser);
+      syncTopbar();
+      rerenderActivePage();
+    }
+  }, (error) => console.error('Realtime DB sync error:', error));
+}
+
+function queuePersist(key,val){
+  const payload = { [key]: cloneValue(val), _updatedAt: Date.now() };
+  saveQueue = saveQueue
+    .then(() => update(storeRef, payload))
+    .catch((error) => {
+      console.error('Realtime DB save error:', error);
+      alert('บันทึกข้อมูลไป Firebase ไม่สำเร็จ กรุณาลองใหม่อีกครั้ง');
+    });
+  return saveQueue;
+}
+
+function save(key,val){
+  storeCache[key]=cloneValue(val);
+  if(storeReady) queuePersist(key,val);
+}
+
+function load(key,def=null){
+  const value=storeCache[key];
+  return value===undefined ? def : cloneValue(value);
+}
 function uid(){ return Date.now().toString(36)+Math.random().toString(36).slice(2,6); }
 function today(){ return new Date().toISOString().slice(0,10); }
 function daysUntil(d){ return Math.ceil((new Date(d)-new Date(today()))/(1000*86400)); }
@@ -782,14 +1044,21 @@ function seedPeriodSelects(){
 // ════════════════════════════════
 // DATA SCHEMA
 // ════════════════════════════════
-// users: [{id,name,username,password,isAdmin,color}]
+// users: [{id,name,username,room,password,isAdmin,color}]
 // timetable_<uid>: [{id,subject,day,start,end}]  (0-indexed periods)
 // appointments: [{id,title,date,time,location,note,createdBy}]
 // assignments: [{id,title,subject,due,priority,note,doneBy:[uid]}]
 // groupCode: string
 
-function getUsers(){ return load('users',[]); }
-function saveUsers(u){ save('users',u); }
+function normalizeRoom(room=''){ return room.toString().trim().toUpperCase(); }
+function normalizeUser(user={}){
+  const username=(user.username||'').trim();
+  const room=normalizeRoom(user.room||'');
+  const name=(user.name||username||'').trim();
+  return {...user, username, room, name, color:user.color||colorFor(username||name||uid())};
+}
+function getUsers(){ return (load('users',[])||[]).map(normalizeUser); }
+function saveUsers(u){ save('users',u.map(normalizeUser)); }
 function getAppts(){ return load('appointments',[]); }
 function saveAppts(a){ save('appointments',a); }
 function getAsgns(){ return load('assignments',[]); }
@@ -797,8 +1066,32 @@ function saveAsgns(a){ save('assignments',a); }
 function getGroupCode(){ return load('groupCode', genCode()); }
 function genCode(){ const c='ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; let s=''; for(let i=0;i<6;i++) s+=c[Math.floor(Math.random()*c.length)]; return s; }
 function regenCode(){ const c=genCode(); save('groupCode',c); renderAdmin(); }
+function getRoomOptions(){
+  return [...new Set(getUsers().map(u=>u.room).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'th'));
+}
 
 let currentUser=null;
+let timetableRoomFilter='all';
+
+function syncTopbar(){
+  if(!currentUser) return;
+  document.getElementById('top-name').textContent=currentUser.name;
+  const av=document.getElementById('top-avatar');
+  av.textContent=initials(currentUser.name);
+  av.style.background=currentUser.color;
+  document.getElementById('top-admin-badge').style.display=currentUser.isAdmin?'inline':'none';
+  document.getElementById('admin-tab').style.display=currentUser.isAdmin?'inline-block':'none';
+}
+
+function rerenderActivePage(){
+  const renders={dashboard:renderDashboard,freetimes:renderFreeTimes,timetable:renderTimetable,
+    appointments:renderAppointments,assignments:()=>renderAssignments(asgnFilter),members:renderMembers,admin:renderAdmin,random:renderRandom,buddy:renderBuddy};
+  if(activePage==='assignments'){
+    document.getElementById('asgn-tab-pending').classList.toggle('active',asgnFilter==='pending');
+    document.getElementById('asgn-tab-done').classList.toggle('active',asgnFilter==='done');
+  }
+  if(renders[activePage]) renders[activePage]();
+}
 
 // ════════════════════════════════
 // AUTH
@@ -813,40 +1106,49 @@ function toggleForm(t){
 function doLogin(){
   const u=document.getElementById('login-username').value.trim();
   const p=document.getElementById('login-password').value;
+  const remember=document.getElementById('remember-me').checked;
   const users=getUsers();
   // seed default admin if empty
   if(users.length===0){ seedDefaultAdmin(); return doLogin(); }
   const found=users.find(x=>x.username===u && x.password===p);
   if(!found){ document.getElementById('login-err').style.display='block'; return; }
   currentUser=found;
+  if(remember){
+    localStorage.setItem('gs_remember', found.id);
+    localStorage.setItem('gs_last_username', u);
+  } else {
+    localStorage.removeItem('gs_remember');
+    localStorage.removeItem('gs_last_username');
+  }
   startApp();
 }
 
 function doRegister(){
-  const name=document.getElementById('reg-name').value.trim();
   const uname=document.getElementById('reg-username').value.trim();
+  const room=normalizeRoom(document.getElementById('reg-room').value);
   const pass=document.getElementById('reg-password').value;
   const code=document.getElementById('reg-groupcode').value.trim().toUpperCase();
   const errEl=document.getElementById('reg-err');
-  if(!name||!uname||!pass||pass.length<4){ errEl.textContent='กรอกข้อมูลให้ครบ และรหัสผ่านอย่างน้อย 4 ตัว'; errEl.style.display='block'; return; }
+  if(!uname||!room||!pass||pass.length<4){ errEl.textContent='กรอกชื่อผู้ใช้ ห้อง และรหัสผ่านอย่างน้อย 4 ตัว'; errEl.style.display='block'; return; }
   const gc=getGroupCode();
   if(code!==gc){ errEl.textContent='รหัสเข้าร่วมกลุ่มไม่ถูกต้อง'; errEl.style.display='block'; return; }
   const users=getUsers();
   if(users.find(x=>x.username===uname)){ errEl.textContent='ชื่อผู้ใช้นี้มีอยู่แล้ว'; errEl.style.display='block'; return; }
-  const newUser={id:uid(),name,username:uname,password:pass,isAdmin:false,color:colorFor(uname)};
+  const newUser={id:uid(),name:uname,username:uname,room,password:pass,isAdmin:false,color:colorFor(uname)};
   users.push(newUser); saveUsers(users);
   currentUser=newUser; startApp();
 }
 
 function seedDefaultAdmin(){
   const code=genCode(); save('groupCode',code);
-  const admin={id:uid(),name:'Admin',username:'admin',password:'admin1234',isAdmin:true,color:COLORS[0]};
+  const admin={id:uid(),name:'Admin',username:'admin',room:'',password:'admin1234',isAdmin:true,color:COLORS[0]};
   saveUsers([admin]);
   alert(`🎉 ระบบสร้างบัญชี Admin แล้ว!\nUsername: admin\nPassword: admin1234\nรหัสกลุ่ม: ${code}\n\n(กรุณาเปลี่ยนรหัสผ่านทันที)`);
 }
 
 function doLogout(){
   sessionStorage.removeItem('gs_session');
+  localStorage.removeItem('gs_remember');
   currentUser=null;
   document.getElementById('app').style.display='none';
   document.getElementById('login-screen').style.display='flex';
@@ -854,15 +1156,11 @@ function doLogout(){
 }
 
 function startApp(){
+  currentUser=normalizeUser(currentUser);
   sessionStorage.setItem('gs_session', currentUser.id);
   document.getElementById('login-screen').style.display='none';
   document.getElementById('app').style.display='block';
-  document.getElementById('top-name').textContent=currentUser.name;
-  const av=document.getElementById('top-avatar');
-  av.textContent=initials(currentUser.name);
-  av.style.background=currentUser.color;
-  document.getElementById('top-admin-badge').style.display=currentUser.isAdmin?'inline':'none';
-  document.getElementById('admin-tab').style.display=currentUser.isAdmin?'inline-block':'none';
+  syncTopbar();
   seedPeriodSelects();
   goPage('dashboard');
 }
@@ -871,6 +1169,7 @@ function startApp(){
 // PAGE ROUTING
 // ════════════════════════════════
 function goPage(name){
+  activePage=name;
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
   document.querySelectorAll('.nav-tab').forEach(t=>t.classList.remove('active'));
   document.getElementById('page-'+name).classList.add('active');
@@ -880,7 +1179,7 @@ function goPage(name){
   });
   // render
   const renders={dashboard:renderDashboard,freetimes:renderFreeTimes,timetable:renderTimetable,
-    appointments:renderAppointments,assignments:()=>renderAssignments('pending'),members:renderMembers,admin:renderAdmin,random:renderRandom};
+    appointments:renderAppointments,assignments:()=>renderAssignments('pending'),members:renderMembers,admin:renderAdmin,random:renderRandom,buddy:renderBuddy};
   if(renders[name]) renders[name]();
 }
 
@@ -968,6 +1267,16 @@ function renderFreeTimes(){
 // ════════════════════════════════
 function openTTModal(){ document.getElementById('tt-modal').style.display='block'; }
 function closeTTModal(){ document.getElementById('tt-modal').style.display='none'; }
+function setTimetableRoomFilter(value){ timetableRoomFilter=value; renderTimetable(); }
+function syncTimetableRoomFilter(){
+  const sel=document.getElementById('tt-room-filter');
+  if(!sel) return timetableRoomFilter;
+  const rooms=getRoomOptions();
+  sel.innerHTML=`<option value="all">ดูรวมทุกห้อง</option>${rooms.map(room=>`<option value="${room}">ห้อง ${room}</option>`).join('')}`;
+  if(timetableRoomFilter!=='all' && !rooms.includes(timetableRoomFilter)) timetableRoomFilter='all';
+  sel.value=timetableRoomFilter;
+  return timetableRoomFilter;
+}
 
 function addTTEntry(){
   const subject=document.getElementById('tt-subject').value.trim();
@@ -983,27 +1292,41 @@ function addTTEntry(){
 }
 
 function renderTimetable(){
-  const tt=load('tt_'+currentUser.id,[]);
+  const myTT=load('tt_'+currentUser.id,[]);
+  const selectedRoom=syncTimetableRoomFilter();
+  const users=getUsers().filter(u=>!u.isAdmin);
+  const visibleUsers=selectedRoom==='all' ? users : users.filter(u=>u.room===selectedRoom);
+  const allEntries=visibleUsers.flatMap(u=>load('tt_'+u.id,[]).map(e=>({...e,user:u})));
+  const summary=document.getElementById('tt-summary');
+  if(selectedRoom==='all'){
+    summary.textContent=visibleUsers.length>0
+      ? `กำลังดูตารางรวมของ ${visibleUsers.length} คน จาก ${getRoomOptions().length || 0} ห้อง`
+      : 'ยังไม่มีสมาชิกที่ระบุห้อง';
+  } else {
+    summary.textContent=visibleUsers.length>0
+      ? `กำลังดูตารางของห้อง ${selectedRoom} จำนวน ${visibleUsers.length} คน`
+      : `ยังไม่มีสมาชิกในห้อง ${selectedRoom}`;
+  }
   // Grid
   const grid=document.getElementById('my-timetable');
   let html='<div class="tt-header"></div>'+DAYS.map(d=>`<div class="tt-header">${d}</div>`).join('');
   for(let p=0;p<PERIODS.length-1;p++){
     html+=`<div class="tt-time">${PERIODS[p]}</div>`;
     for(let d=0;d<5;d++){
-      const entries=tt.filter(e=>e.day===d && e.start<=p && e.end>p);
-      html+=`<div class="tt-cell">${entries.map(e=>`<div class="tt-block">${e.subject}</div>`).join('')}</div>`;
+      const entries=allEntries.filter(e=>e.day===d && e.start<=p && e.end>p);
+      html+=`<div class="tt-cell">${entries.map(e=>`<div class="tt-block">${e.subject}<span class="tt-block-meta">@${e.user.username}${e.user.room?` · ห้อง ${e.user.room}`:''}</span></div>`).join('')}</div>`;
     }
   }
   grid.innerHTML=html;
   // List
   const listEl=document.getElementById('tt-list');
-  if(tt.length===0){ listEl.innerHTML='<div class="empty-state"><div class="big">📚</div>ยังไม่มีคาบเรียน</div>'; return; }
-  listEl.innerHTML=tt.map(e=>`
+  if(myTT.length===0){ listEl.innerHTML='<div class="empty-state"><div class="big">📚</div>ยังไม่มีคาบเรียน</div>'; return; }
+  listEl.innerHTML=myTT.map(e=>`
     <div class="event-item" style="margin-bottom:8px">
       <div class="event-dot" style="background:var(--accent)"></div>
       <div style="flex:1">
         <div class="event-title">${e.subject}</div>
-        <div class="event-sub">${DAYS[e.day]} · ${PERIODS[e.start]} – ${PERIODS[e.end]}</div>
+        <div class="event-sub">${currentUser.room?`ห้อง ${currentUser.room} · `:''}${DAYS[e.day]} · ${PERIODS[e.start]} – ${PERIODS[e.end]}</div>
       </div>
       <button class="btn-del" onclick="delTT('${e.id}')">🗑</button>
     </div>`).join('');
@@ -1013,6 +1336,193 @@ function delTT(id){
   if(!confirm('ลบคาบเรียนนี้?')) return;
   let tt=load('tt_'+currentUser.id,[]);
   tt=tt.filter(e=>e.id!==id); save('tt_'+currentUser.id,tt); renderTimetable();
+}
+
+
+// ════════════════════════════════
+// TIMETABLE IMAGE IMPORT / OCR
+// ════════════════════════════════
+let ttImportEntries=[];
+let tesseractLoading=null;
+
+function setTTImportStatus(msg){
+  const el=document.getElementById('tt-import-status');
+  if(el) el.textContent=msg;
+}
+
+async function ensureTesseract(){
+  if(window.Tesseract) return window.Tesseract;
+  if(tesseractLoading) return tesseractLoading;
+  tesseractLoading=new Promise((resolve,reject)=>{
+    const sc=document.createElement('script');
+    sc.src='https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js';
+    sc.onload=()=>resolve(window.Tesseract);
+    sc.onerror=()=>reject(new Error('โหลด OCR engine ไม่สำเร็จ'));
+    document.head.appendChild(sc);
+  });
+  return tesseractLoading;
+}
+
+function normalizeSubjectName(raw=''){
+  const t=raw.toString().replace(/[()\[\]{}]/g,' ').replace(/\s+/g,' ').trim();
+  if(!t) return '';
+  if(/ค้นคว้า|is\s*\d*|independent\s*study/i.test(t)) return '';
+  if(/สังคม|ประวัติ|ภูมิศาสตร์|หน้าที่พลเมือง|เศรษฐศาสตร์/.test(t)) return 'สังคม';
+  if(/วิทยา|ฟิสิกส์|เคมี|ชีว/.test(t)) return 'วิทย์';
+  if(/คณิต|calculus|math/i.test(t)) return 'คณิต';
+  if(/ภาษาไทย|ไทย/.test(t)) return 'ไทย';
+  if(/อังกฤษ|english/i.test(t)) return 'อังกฤษ';
+  if(/พละ|สุขศึกษา|สุข/.test(t)) return 'สุข/พละ';
+  if(/ศิลป|ดนตรี|นาฏศิลป์/.test(t)) return 'ศิลปะ';
+  if(/คอม|วิทยาการคำนวณ|เทคโนโลยี/.test(t)) return 'คอม';
+  if(/จีน|chinese/i.test(t)) return 'จีน';
+  if(/ญี่ปุ่น|japanese/i.test(t)) return 'ญี่ปุ่น';
+  return t.slice(0,18);
+}
+
+function subjectFromCode(code='', context=''){
+  const c=code.toString().replace(/\s+/g,'').toUpperCase();
+  const ctx=context||'';
+  if(/ค้นคว้า|IS/i.test(ctx)) return '';
+  if(/^[คK]/.test(c)) return 'คณิต';
+  if(/^[วV]/.test(c)) return 'วิทย์';
+  if(/^[สS]/.test(c)) return 'สังคม';
+  if(/^ท/.test(c)) return 'ไทย';
+  if(/^[อE]/.test(c)) return 'อังกฤษ';
+  if(/^พ/.test(c)) return 'สุข/พละ';
+  if(/^ศ/.test(c)) return 'ศิลปะ';
+  if(/^ง/.test(c)) return 'การงาน';
+  if(/^จ/.test(c)) return 'จีน';
+  if(/^ญ/.test(c)) return 'ญี่ปุ่น';
+  if(/^ฝ/.test(c)) return 'ฝรั่งเศส';
+  return normalizeSubjectName(ctx) || c;
+}
+
+function detectRoomFromText(text=''){
+  const m=text.match(/(?:ม\.?|ห้อง|room|class)\s*([1-6]\s*[/\-]\s*\d{1,2})/i) || text.match(/([1-6]\s*[/\-]\s*\d{1,2})/);
+  return m ? normalizeRoom(m[1].replace(/[\\s]+/g,'/').replace(/-/, '/')) : '';
+}
+
+function periodIndexFromTime(t=''){
+  const clean=t.replace('.',':');
+  const idx=PERIODS.findIndex(p=>p===clean);
+  if(idx>=0) return idx;
+  const [h,m]=clean.split(':').map(Number);
+  if(Number.isNaN(h)) return -1;
+  const minutes=h*60+(m||0);
+  let best=0, diff=9999;
+  PERIODS.forEach((p,i)=>{ const [ph,pm]=p.split(':').map(Number); const d=Math.abs(minutes-(ph*60+pm)); if(d<diff){diff=d;best=i;} });
+  return diff<=35 ? best : -1;
+}
+
+function detectDay(line='', fallback=-1){
+  const s=line.toLowerCase();
+  if(/จันทร์|monday|mon/.test(s)) return 0;
+  if(/อังคาร|tuesday|tue/.test(s)) return 1;
+  if(/พุธ|wednesday|wed/.test(s)) return 2;
+  if(/พฤหัส|thursday|thu/.test(s)) return 3;
+  if(/ศุกร์|friday|fri/.test(s)) return 4;
+  return fallback;
+}
+
+function parseTimetableText(text=''){
+  const room=detectRoomFromText(text);
+  const lines=text.split(/
++/).map(x=>x.trim()).filter(Boolean);
+  const entries=[];
+  let currentDay=-1;
+  const codeRe=/([ก-ฮA-Z]{1,4}\s*\d{4,6})/i;
+  for(const line of lines){
+    currentDay=detectDay(line,currentDay);
+    if(currentDay<0) continue;
+    const timeRange=line.match(/(\d{1,2}[:.]\d{2})\s*[-–—ถึง]+\s*(\d{1,2}[:.]\d{2})/);
+    const singleTime=line.match(/(\d{1,2}[:.]\d{2})/);
+    let start=-1,end=-1;
+    if(timeRange){ start=periodIndexFromTime(timeRange[1]); end=periodIndexFromTime(timeRange[2]); }
+    else if(singleTime){ start=periodIndexFromTime(singleTime[1]); end=start+1; }
+    if(start<0) continue;
+    if(end<=start) end=start+1;
+    const codeMatch=line.match(codeRe);
+    const code=codeMatch ? codeMatch[1].replace(/\s+/g,'') : '';
+    const withoutTime=line.replace(/\d{1,2}[:.]\d{2}\s*[-–—ถึง]*\s*\d{0,2}[:.]?\d{0,2}/g,' ');
+    const subject=code ? subjectFromCode(code,line) : normalizeSubjectName(withoutTime.replace(/จันทร์|อังคาร|พุธ|พฤหัสบดี|พฤหัส|ศุกร์/gi,' '));
+    if(!subject) continue;
+    entries.push({id:uid(),subject,day:currentDay,start,end,code,room});
+  }
+  return {room,entries};
+}
+
+async function readTimetableImage(){
+  const input=document.getElementById('tt-import-image');
+  const file=input?.files?.[0];
+  if(!file){ alert('เลือกรูปตารางเรียนก่อน'); return; }
+  document.getElementById('tt-import-review').style.display='block';
+  setTTImportStatus('กำลังโหลด OCR...');
+  try{
+    const Tesseract=await ensureTesseract();
+    setTTImportStatus('กำลังอ่านข้อความจากรูป... อาจใช้เวลาสักครู่');
+    const result=await Tesseract.recognize(file,'tha+eng',{ logger:m=>{ if(m.status) setTTImportStatus(`OCR: ${m.status} ${m.progress?Math.round(m.progress*100)+'%':''}`); } });
+    const text=result?.data?.text||'';
+    document.getElementById('tt-import-text').value=text;
+    const room=detectRoomFromText(text);
+    if(room) document.getElementById('tt-import-room').value=room;
+    parseTTImportText();
+    setTTImportStatus('อ่านเสร็จแล้ว ตรวจรายการด้านล่างก่อนบันทึก');
+  }catch(err){
+    console.error(err);
+    setTTImportStatus('อ่านรูปไม่สำเร็จ: '+err.message);
+    alert('OCR ไม่สำเร็จ ลองใช้รูปชัดขึ้น หรือพิมพ์ข้อความ OCR เองในช่องตรวจทาน');
+  }
+}
+
+function parseTTImportText(){
+  const text=document.getElementById('tt-import-text').value;
+  const parsed=parseTimetableText(text);
+  const manualRoom=normalizeRoom(document.getElementById('tt-import-room').value||parsed.room||currentUser.room||'');
+  if(manualRoom) document.getElementById('tt-import-room').value=manualRoom;
+  ttImportEntries=parsed.entries.map(e=>({...e,room:manualRoom||e.room||''}));
+  const el=document.getElementById('tt-import-result');
+  if(ttImportEntries.length===0){ el.innerHTML='<div class="empty-state"><div class="big">🧐</div>ยังแปลงคาบไม่ได้ ลองแก้ข้อความ OCR ให้มี วัน เวลา รหัสวิชา/ชื่อวิชา</div>'; return; }
+  el.innerHTML=ttImportEntries.map((e,i)=>`
+    <div class="event-item" style="margin-bottom:8px">
+      <div class="event-dot" style="background:var(--accent3)"></div>
+      <div style="flex:1">
+        <div class="event-title">${e.subject}${e.code?` <span style="color:var(--text2);font-size:12px">(${e.code})</span>`:''}</div>
+        <div class="event-sub">${e.room?`ห้อง ${e.room} · `:''}${DAYS[e.day]} · ${PERIODS[e.start]} – ${PERIODS[e.end]}</div>
+      </div>
+      <button class="btn-del" onclick="removeTTImportEntry(${i})">🗑</button>
+    </div>`).join('');
+}
+
+function removeTTImportEntry(i){
+  ttImportEntries.splice(i,1);
+  const el=document.getElementById('tt-import-result');
+  el.innerHTML=ttImportEntries.map((e,idx)=>`<div class="event-item" style="margin-bottom:8px"><div class="event-dot" style="background:var(--accent3)"></div><div style="flex:1"><div class="event-title">${e.subject}</div><div class="event-sub">${e.room?`ห้อง ${e.room} · `:''}${DAYS[e.day]} · ${PERIODS[e.start]} – ${PERIODS[e.end]}</div></div><button class="btn-del" onclick="removeTTImportEntry(${idx})">🗑</button></div>`).join('') || '<div class="empty-state">ลบรายการหมดแล้ว</div>';
+}
+
+function saveTTImportEntries(){
+  if(ttImportEntries.length===0){ alert('ยังไม่มีรายการให้บันทึก'); return; }
+  const importRoom=normalizeRoom(document.getElementById('tt-import-room').value||ttImportEntries[0]?.room||currentUser.room||'');
+  let targetUser=currentUser;
+  if(importRoom && currentUser.room!==importRoom){
+    const sameRoom=getUsers().find(u=>!u.isAdmin && u.room===importRoom);
+    if(sameRoom && currentUser.isAdmin) targetUser=sameRoom;
+    else if(!confirm(`รูปนี้เหมือนเป็นห้อง ${importRoom} แต่บัญชีคุณอยู่ห้อง ${currentUser.room||'ไม่ระบุ'} จะบันทึกเข้าตารางของคุณต่อไหม?`)) return;
+  }
+  const old=load('tt_'+targetUser.id,[]);
+  const cleaned=ttImportEntries.map(e=>({id:uid(),subject:e.subject,day:e.day,start:e.start,end:e.end}));
+  save('tt_'+targetUser.id, old.concat(cleaned));
+  alert(`บันทึกแล้ว ${cleaned.length} คาบ${targetUser.id!==currentUser.id?` ให้ห้อง ${importRoom}`:''}`);
+  clearTTImport();
+  renderTimetable();
+}
+
+function clearTTImport(){
+  ttImportEntries=[];
+  ['tt-import-image','tt-import-room','tt-import-text'].forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
+  const review=document.getElementById('tt-import-review'); if(review) review.style.display='none';
+  const res=document.getElementById('tt-import-result'); if(res) res.innerHTML='';
+  setTTImportStatus('รองรับไฟล์รูปทั่วไป ถ้ารูปเอียง/เบลอมาก OCR อาจอ่านผิดได้');
 }
 
 // ════════════════════════════════
@@ -1149,7 +1659,7 @@ function renderMembers(){
       <div class="member-avatar" style="background:${u.color}">${initials(u.name)}</div>
       <div>
         <div class="member-name">${u.name} ${u.isAdmin?'<span class="admin-badge">Admin</span>':''}</div>
-        <div class="member-role">@${u.username}</div>
+        <div class="member-role">@${u.username}${u.room?` · ห้อง ${u.room}`:''}</div>
       </div>
     </div>`).join('');
 }
@@ -1167,7 +1677,7 @@ function renderAdmin(){
       <div class="member-avatar" style="background:${u.color};width:32px;height:32px;font-size:13px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700">${initials(u.name)}</div>
       <div style="flex:1">
         <div class="event-title">${u.name} ${u.isAdmin?'<span class="admin-badge">Admin</span>':''}</div>
-        <div class="event-sub">@${u.username}</div>
+        <div class="event-sub">@${u.username}${u.room?` · ห้อง ${u.room}`:''}</div>
       </div>
       ${!u.isAdmin&&u.id!==currentUser.id?`<button class="btn-del" onclick="removeUser('${u.id}')">ลบ</button>`:''}
       ${!u.isAdmin&&u.id!==currentUser.id?`<button class="btn-add" style="padding:6px 12px;font-size:12px" onclick="makeAdmin('${u.id}')">ตั้งเป็น Admin</button>`:''}
@@ -1318,18 +1828,239 @@ function clearRandHistory(){
 }
 
 // ════════════════════════════════
+// BUDDY SYSTEM
+// ════════════════════════════════
+// buddyPairs: {uid: buddyUid} stored in localStorage
+// buddyParticipants: [uid] — who was included in the draw
+
+let buddySelected = {}; // for admin setup UI
+
+function getBuddyPairs(){ return load('buddyPairs', null); }
+function saveBuddyPairs(p){ save('buddyPairs', p); }
+function getBuddyParticipants(){ return load('buddyParticipants', []); }
+function saveBuddyParticipants(p){ save('buddyParticipants', p); }
+
+function renderBuddy(){
+  const pairs = getBuddyPairs();
+  if(currentUser.isAdmin){
+    document.getElementById('buddy-user-view').style.display = 'none';
+    document.getElementById('buddy-admin-view').style.display = 'block';
+    renderBuddyAdminSetup();
+    if(pairs){
+      document.getElementById('buddy-pairs-card').style.display = 'block';
+      renderBuddyPairsTable(pairs);
+    } else {
+      document.getElementById('buddy-pairs-card').style.display = 'none';
+    }
+  } else {
+    document.getElementById('buddy-user-view').style.display = 'block';
+    document.getElementById('buddy-admin-view').style.display = 'none';
+    renderBuddyUserView(pairs);
+  }
+}
+
+function renderBuddyUserView(pairs){
+  const el = document.getElementById('buddy-reveal-content');
+  if(!pairs){
+    el.innerHTML = `<div class="buddy-no-draw">⏳ Admin ยังไม่ได้สุ่มบัดดี้ รอสักครู่นะ!</div>`;
+    return;
+  }
+  const myBuddyId = pairs[currentUser.id];
+  if(!myBuddyId){
+    el.innerHTML = `<div class="buddy-no-draw">😢 คุณไม่ได้อยู่ในรอบการสุ่มครั้งนี้</div>`;
+    return;
+  }
+  const users = getUsers();
+  const buddy = users.find(u => u.id === myBuddyId);
+  if(!buddy){
+    el.innerHTML = `<div class="buddy-no-draw">❓ ไม่พบข้อมูลบัดดี้</div>`;
+    return;
+  }
+  el.innerHTML = `
+    <p style="font-size:14px;color:var(--text2);margin-bottom:20px">บัดดี้ของคุณคือ...</p>
+    <div class="buddy-card-big">
+      <div class="buddy-heart">💛</div>
+      <div style="display:flex;align-items:center;justify-content:center;gap:12px;margin-bottom:10px">
+        <div class="member-avatar" style="background:${buddy.color};width:52px;height:52px;font-size:20px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700">${initials(buddy.name)}</div>
+      </div>
+      <div class="buddy-name-big">${buddy.name}</div>
+      <div class="buddy-username">@${buddy.username}</div>
+    </div>
+    <p style="font-size:12px;color:var(--text3);margin-top:20px">ผลการสุ่มจะเปลี่ยนได้ก็ต่อเมื่อ Admin รีเซ็ตเท่านั้น</p>
+  `;
+}
+
+function renderBuddyAdminSetup(){
+  const users = getUsers();
+  const participants = getBuddyParticipants();
+  users.forEach(u => {
+    if(buddySelected[u.id] === undefined)
+      buddySelected[u.id] = participants.length > 0 ? participants.includes(u.id) : true;
+  });
+  const el = document.getElementById('buddy-member-list');
+  el.innerHTML = users.map(u => `
+    <div class="rand-member-row ${buddySelected[u.id]?'selected':''}" onclick="toggleBuddyMember('${u.id}')">
+      <input type="checkbox" class="rand-cb" ${buddySelected[u.id]?'checked':''} onchange="toggleBuddyMember('${u.id}')" onclick="event.stopPropagation()">
+      <div class="member-avatar" style="background:${u.color};width:28px;height:28px;font-size:11px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;flex-shrink:0">${initials(u.name)}</div>
+      <span style="font-size:14px;font-weight:500">${u.name}</span>
+    </div>`).join('');
+}
+
+function toggleBuddyMember(id){
+  buddySelected[id] = !buddySelected[id];
+  renderBuddyAdminSetup();
+}
+
+function buddySelectAll(v){
+  getUsers().forEach(u => buddySelected[u.id] = v);
+  renderBuddyAdminSetup();
+}
+
+function doShuffleBuddy(){
+  const pairs = getBuddyPairs();
+  if(pairs){
+    if(!confirm('มีผลการสุ่มอยู่แล้ว หากสุ่มใหม่จะลบผลเดิมทิ้ง ยืนยัน?')) return;
+  }
+  const users = getUsers();
+  const pool = users.filter(u => buddySelected[u.id]);
+  if(pool.length < 2){ alert('ต้องเลือกอย่างน้อย 2 คน'); return; }
+  if(pool.length % 2 !== 0){
+    if(!confirm(`มีสมาชิก ${pool.length} คน (เลขคี่) จะมี 1 คนที่ไม่มีบัดดี้ ยืนยัน?`)) return;
+  }
+
+  // Shuffle using Fisher-Yates
+  const arr = [...pool];
+  for(let i = arr.length-1; i > 0; i--){
+    const j = Math.floor(Math.random()*(i+1));
+    [arr[i],arr[j]] = [arr[j],arr[i]];
+  }
+
+  // Create derangement: pair arr[0]->arr[1], arr[1]->arr[0], arr[2]->arr[3] ...
+  // Actually do a "gift exchange" style: each person gets the next person in shuffled order
+  // This guarantees no one gets themselves
+  const newPairs = {};
+  const n = arr.length;
+  for(let i = 0; i < n; i++){
+    const giver = arr[i];
+    const receiver = arr[(i+1) % n]; // circular: last person gets first
+    newPairs[giver.id] = receiver.id;
+  }
+
+  saveBuddyPairs(newPairs);
+  saveBuddyParticipants(pool.map(u=>u.id));
+  renderBuddy();
+  alert('✅ สุ่มบัดดี้เสร็จแล้ว! สมาชิกสามารถเข้าหน้าบัดดี้เพื่อดูผลได้เลย');
+}
+
+function doResetBuddy(){
+  if(!confirm('รีเซ็ตผลการสุ่มบัดดี้ทั้งหมด? สมาชิกจะไม่เห็นบัดดี้จนกว่าจะสุ่มใหม่')) return;
+  saveBuddyPairs(null);
+  saveBuddyParticipants([]);
+  buddySelected = {};
+  renderBuddy();
+}
+
+function renderBuddyPairsTable(pairs){
+  const users = getUsers();
+  const el = document.getElementById('buddy-pairs-list');
+  const entries = Object.entries(pairs);
+  if(entries.length === 0){ el.innerHTML = '<div class="empty-state">ไม่มีข้อมูล</div>'; return; }
+  el.innerHTML = entries.map(([giverId, receiverId]) => {
+    const giver = users.find(u=>u.id===giverId);
+    const receiver = users.find(u=>u.id===receiverId);
+    if(!giver||!receiver) return '';
+    return `<div class="buddy-pair-row">
+      <div class="member-avatar" style="background:${giver.color};width:32px;height:32px;font-size:12px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;flex-shrink:0">${initials(giver.name)}</div>
+      <span style="font-size:14px;font-weight:500;flex:1">${giver.name}</span>
+      <span class="buddy-arrow">💛→</span>
+      <div class="member-avatar" style="background:${receiver.color};width:32px;height:32px;font-size:12px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;flex-shrink:0">${initials(receiver.name)}</div>
+      <span style="font-size:14px;font-weight:500;flex:1">${receiver.name}</span>
+    </div>`;
+  }).join('');
+}
+
+// ════════════════════════════════
 // INIT
 // ════════════════════════════════
-window.addEventListener('load',()=>{
-  // If already "logged in" via session flag
+window.addEventListener('load',async ()=>{
+  await initializeDataStore();
+  // Check remember-me (localStorage) first — persists across browser restarts
+  const remembered=localStorage.getItem('gs_remember');
+  if(remembered){
+    const u=getUsers().find(x=>x.id===remembered);
+    if(u){ currentUser=u; startApp(); return; }
+  }
+  // Then check session (sessionStorage) — only for current tab/session
   const sess=sessionStorage.getItem('gs_session');
   if(sess){
     const u=getUsers().find(x=>x.id===sess);
     if(u){ currentUser=u; startApp(); return; }
   }
+  // Pre-fill username if remembered
+  const savedUsername=localStorage.getItem('gs_last_username');
+  if(savedUsername){
+    document.getElementById('login-username').value=savedUsername;
+    document.getElementById('remember-me').checked=true;
+  }
+});
+
+Object.assign(window,{
+  toggleForm,
+  doLogin,
+  doRegister,
+  doLogout,
+  goPage,
+  openTTModal,
+  closeTTModal,
+  addTTEntry,
+  readTimetableImage,
+  parseTTImportText,
+  saveTTImportEntries,
+  removeTTImportEntry,
+  clearTTImport,
+  delTT,
+  showApptForm,
+  addAppointment,
+  delAppt,
+  showAsgnForm,
+  addAssignment,
+  filterAsgn,
+  toggleDone,
+  delAsgn,
+  regenCode,
+  removeUser,
+  makeAdmin,
+  changeGroupSize,
+  randSelectAll,
+  doRandom,
+  clearRandHistory,
+  toggleRandMember,
+  buddySelectAll,
+  toggleBuddyMember,
+  doShuffleBuddy,
+  doResetBuddy
 });
 
 
+// Bind eye toggle buttons (avoids onclick in module scope issue)
+document.querySelectorAll('.eye-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const inp = document.getElementById(btn.dataset.target);
+    const showing = btn.dataset.show === '1';
+    if(showing){
+      inp.type = 'password'; btn.dataset.show = '0';
+      btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>';
+    } else {
+      inp.type = 'text'; btn.dataset.show = '1';
+      btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/><line x1="1" y1="1" x2="23" y2="23"/></svg>';
+    }
+  });
+});
+</script>
+<script>
+  if ("serviceWorker" in navigator) {
+    navigator.serviceWorker.register("/sw.js");
+  }
 </script>
 </body>
 </html>
